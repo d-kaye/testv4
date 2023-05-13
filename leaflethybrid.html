@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang ="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Spaces & Socio-Economic Factors</title>
+    <!-- leaflet css-->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
+    <style>
+        body {
+            margin:0;
+            padding: 0;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        #map1, #map2 { float: left; height: 100vh; width:50%; }
+
+        .map-title {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        z-index: 1000;
+    }
+    .map1-title {
+        background-color: #fff;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 0 0 5px #ffffff4d;
+    }
+    .map2-title {
+        background-color: #ffffff;
+        color: #000000;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 0 0 5px rgb(255, 255, 255);
+    }
+    .divider {
+        width: 2;
+        height: 100vh;
+        border-left: 2px solid #000000;
+        position: absolute;
+        left: 50%;
+        top: 0;
+        z-index: 999; 
+    }    
+    #map2 #sidebar {
+			height: 310px;
+			width: 300px;
+			position: absolute;
+			bottom: 10px;
+			right: -500px;
+			background-color: white;
+			z-index: 1000;
+			padding: 10px;
+			transition: all 0.5s;
+		}
+		
+		#map2 #sidebar.expanded {
+			right: 0;
+		}
+		
+		#map2 #toggle-sidebar {
+			position: absolute;
+			top: 100px;
+			left: 10px;
+			z-index: 1001;
+			padding: 10px;
+			background-color: white;
+			border-radius: 10%;
+			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+			cursor: pointer;
+		}
+    #sidebar {
+  display: flex;
+  flex-direction: column;
+}
+
+#sidebar button {
+  margin-bottom: 10px;
+}
+#sidebar {
+  display: flex;
+  flex-direction: column;
+  align-items: left;
+  background-color: #f0f0f0;
+  padding: 20px;
+}
+
+h2 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+button {
+  background-color: #ffffff;
+  border: none;
+  color: rgb(0, 0, 0);
+  padding: 10px 20px;
+  text-align: left;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #c6c9c6;
+}
+
+        
+    </style>
+</head>
+<body>
+    <div id="map1">
+        <div class="map-title map1-title">Open Spaces</div>
+      </div>
+      <div class="divider"></div>
+      <div id="map2">
+        <div class="map-title map2-title">Factors</div>
+        <div id="sidebar">
+            <h2>Map Layers</h2>
+            <button id="layer1">Socio-Economic Index</button>
+            <button id="layer2">Median Personal Income</button>
+            <button id="layer3">Cultural Diversity</button>
+            <button id="layer4">Percentage Unemployed</button>
+          </div>
+          
+          
+        
+            <div id="toggle-sidebar">Map Layers</div>
+      </div>
+
+    <!-- leaflet js-->
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+    <!-- jquery link-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!--Leaflet geoserver request link-->
+    <script src="C:\Users\danie\OneDrive - RMIT University\Year 4\Semester 1\Advanced SIS\Assessments\Project\Lib/L.Geoserver.js"></script>
+
+    <script>
+    // create map instances
+    var map1 = L.map('map1').setView([-37.8136, 144.963], 9);
+    var map2 = L.map('map2').setView([-37.8136, 144.963], 9);
+
+    // add tile layers
+    var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: 'Map data &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+    maxZoom: 18
+    }).addTo(map1);
+    
+    var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: 'Map data &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+    maxZoom: 18
+    }).addTo(map2);
+
+// sync maps on move events
+map1.on('move', function(e) {
+    map2.setView(map1.getCenter(), map1.getZoom(), { animate: false });
+});
+
+map2.on('move', function(e) {
+    map1.setView(map2.getCenter(), map2.getZoom(), { animate: false });
+});
+	
+	// toggle sidebar on click
+	var sidebar = document.getElementById('sidebar');
+	var toggleSidebar = document.getElementById('toggle-sidebar');
+	
+	toggleSidebar.onclick = function() {
+		sidebar.classList.toggle('expanded');
+	};
+
+    var wmsLayer = L.Geoserver.wms("http://20.53.252.168:8080/geoserver/SIS/wms", {
+        layers: "SIS:Open_spaces_sa2",
+       style: "SIS:Open_Spaces_WMS",
+      });
+      wmsLayer.addTo(map1)
+
+
+        var wfsLayer2 = L.Geoserver.wfs("http://20.53.252.168:8080/geoserver/SIS/wfs", {
+            layers: "SIS:Open_spaces_sa21",
+            style: {    
+                color: "black",
+                fillOpacity: "0.1",
+                opacity: "0.1",
+                fillColor: "black",
+            },
+            onEachFeature: function (feature, layer) {
+                layer.bindPopup("<h3 class='popup-title'>" + feature.properties.sa2name2 + "</h3>" +
+    "<table>" +
+    "<tr><td><span style='font-weight:bold'>Open Space (%):</span></td><td>" + feature.properties.percopen + "</td></tr>" +
+    "<tr><td><span style='font-weight:bold'>Total SA2 Population:</span></td><td>" + Number(feature.properties.totalpeop).toLocaleString() + "</td></tr>" +
+    "<tr><td><span style='font-weight:bold'>Median Age:</span></td><td>" + feature.properties.medianage + "</td></tr>" +
+    "<tr><td><span style='font-weight:bold'>Socio-Economic Score:</span></td><td>" + feature.properties.score + "</td></tr>" +
+    "<tr><td><span style='font-weight:bold'>Median Personal income:</span></td><td>" + Number(feature.properties.medianper).toLocaleString() + "</td></tr>" +
+    "<tr><td><span style='font-weight:bold'>Median Rent:</span></td><td>" + Number(feature.properties.medianren).toLocaleString() + "</td></tr>" +
+    "<tr><td><span style='font-weight:bold'>Percentage Unemployed:</span></td><td>" + feature.properties.percumploy + "</td></tr>" +
+    "<tr><td><span style='font-weight:bold'>People Born in Australia:</span></td><td>" + Number(feature.properties.birthaus).toLocaleString() + "</td></tr>" +
+    "<tr><td><span style='font-weight:bold'>People Born Internationally:</span></td><td>" + Number(feature.properties.birthelse).toLocaleString() + "</td></tr>" +
+    "</table>");
+},            
+});
+
+
+
+        wfsLayer2.addTo(map1);
+        
+//map 2 code
+
+var wfsLayer3 = L.Geoserver.wfs("http://20.53.252.168:8080/geoserver/SIS/wfs", {
+            layers: "SIS:Open_spaces_sa21",
+            style: {    
+                color: "black",
+                fillOpacity: "0.1",
+                opacity: "0.1",
+                fillColor: "black",
+            },
+            onEachFeature: function (feature, layer) {
+                layer.bindPopup("<h3 class='popup-title'>" + feature.properties.sa2name2 + "</h3>" +
+    "<table>" +
+    "<tr><td><span style='font-weight:bold'>Open Space (%):</span></td><td>" + feature.properties.percopen + "</td></tr>" +
+    "<tr><td><span style='font-weight:bold'>Total SA2 Population:</span></td><td>" + Number(feature.properties.totalpeop).toLocaleString() + "</td></tr>" +
+    "<tr><td><span style='font-weight:bold'>Median Age:</span></td><td>" + feature.properties.medianage + "</td></tr>" +
+    "<tr><td><span style='font-weight:bold'>Socio-Economic Score:</span></td><td>" + feature.properties.score + "</td></tr>" +
+    "<tr><td><span style='font-weight:bold'>Median Personal income:</span></td><td>" + Number(feature.properties.medianper).toLocaleString() + "</td></tr>" +
+    "<tr><td><span style='font-weight:bold'>Median Rent:</span></td><td>" + Number(feature.properties.medianren).toLocaleString() + "</td></tr>" +
+    "<tr><td><span style='font-weight:bold'>Percentage Unemployed:</span></td><td>" + feature.properties.percumploy + "</td></tr>" +
+    "<tr><td><span style='font-weight:bold'>People Born in Australia:</span></td><td>" + Number(feature.properties.birthaus).toLocaleString() + "</td></tr>" +
+    "<tr><td><span style='font-weight:bold'>People Born Internationally:</span></td><td>" + Number(feature.properties.birthelse).toLocaleString() + "</td></tr>" +
+    "</table>");
+},            
+});
+
+wfsLayer3.addTo(map2);
+
+// create the WMS layers
+var layer1 = L.Geoserver.wms("http://20.53.252.168:8080/geoserver/SIS/wms", {
+        layers: "SIS:Open_spaces_sa2",
+       style: "SIS:Open_Spaces_WMS",
+      });
+
+var layer2 = L.Geoserver.wms("http://20.53.252.168:8080/geoserver/SIS/wms", {
+        layers: "SIS:Open_spaces_sa2",
+       style: "SIS:Open_Spaces_WMS",
+      });
+
+var layer3 = L.Geoserver.wms("http://20.53.252.168:8080/geoserver/SIS/wms", {
+        layers: "SIS:Open_spaces_sa2",
+       style: "SIS:Open_Spaces_WMS",
+      });
+
+// add the layers to the map
+layer1.addTo(map2);
+layer2.addTo(map2);
+layer3.addTo(map2);
+
+// add event listeners to the buttons
+$('#layer1').on('click', function() {
+    if(map2.hasLayer(layer1)) {
+        map2.removeLayer(layer1);
+    } else {
+        layer1.addTo(map2);
+    }
+});
+
+$('#layer2').on('click', function() {
+    if(map2.hasLayer(layer2)) {
+        map2.removeLayer(layer2);
+    } else {
+        layer2.addTo(map2);
+    }
+});
+
+$('#layer3').on('click', function() {
+    if(map2.hasLayer(layer3)) {
+        map2.removeLayer(layer3);
+    } else {
+        layer3.addTo(map2);
+    }
+});
+
+
+    </script>
+</body>
+</html>
